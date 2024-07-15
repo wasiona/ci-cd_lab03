@@ -1,0 +1,48 @@
+pipeline {
+    agent any
+
+    environment {
+        APP_PORT = BRANCH_NAME == 'main' ? '3000' : '3001'
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                echo 'Checking out the code...'
+        
+            }
+        }
+        stage('Build') {
+            steps {
+                echo 'Building the project...'
+                // Using NodeJS Installation defined in Jenkins Tools 'nodejs'
+                nodejs(nodeJSInstallationName: 'node') {
+                  // Run the build.sh script
+                  sh './scripts/build.sh'
+                  // Build the React project
+                  sh 'npm run build'
+            }
+        }
+        stage('Test') {
+            steps {
+                echo 'Testing the project...'
+                nodejs(nodeJSInstallationName: 'node') 
+                  //Run the test.sh that already has npm test
+                  sh './scripts/test.sh'
+            }
+        }
+        stage('Build Docker Image') {
+            steps {
+                echo 'Building Docker image...'
+                // your Docker build steps will go here
+            }
+        }
+        stage('Deploy') {
+            steps {
+                echo 'Deploying the Application...'
+                echo "Deploying the Application on port ${APP_PORT} ..."
+              
+            }
+        }
+    }
+}
