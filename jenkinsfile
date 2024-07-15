@@ -9,40 +9,66 @@ pipeline {
         stage('Checkout') {
             steps {
                 echo 'Checking out the code...'
-        
             }
         }
+
         stage('Build') {
             steps {
                 echo 'Building the project...'
-                // Using NodeJS Installation defined in Jenkins Tools 'nodejs'
+                // Using NodeJS Installation defined in Jenkins Tools
                 nodejs(nodeJSInstallationName: 'node') {
-                  // Run the build.sh script
-                  sh './scripts/build.sh'
-                  // Build the React project
-                  sh 'npm run build'
+                    // Run the build.sh script
+                    sh './scripts/build.sh'
+                    // Build the React project
+                    sh 'npm run build'
+                }
             }
         }
+
         stage('Test') {
             steps {
                 echo 'Testing the project...'
-                nodejs(nodeJSInstallationName: 'node') 
-                  //Run the test.sh that already has npm test
-                  sh './scripts/test.sh'
-            }
+                nodejs(nodeJSInstallationName: 'node') {
+                    // Run the test.sh that already has npm test
+                    sh './scripts/test.sh'
+                }
+            }  
         }
+      
         stage('Build Docker Image') {
             steps {
-                echo 'Building Docker image...'
-                // your Docker build steps will go here
+                script {
+                    // Initialize variables for naming docker images
+                    def node = 'node' 
+                    def branch = env.BRANCH_NAME 
+                    def version = 'v1.0'
+                    def appPort
+
+                    if(branch == 'main') {
+                        appPort = '3000'
+                    } else if(branch == 'dev') {
+                        appPort = '3001'
+                    }
+
+                    // Build Docker image
+                    dockerImage = docker.build("${node}${branch}:${version} --build-arg APP_PORT=${appPort} .")
+
+                    // Output the id of the Docker image to console
+                    echo "Docker image ID: ${dockerImage.id}"
+                }
             }
         }
+
         stage('Deploy') {
             steps {
-                echo 'Deploying the Application...'
-                echo "Deploying the Application on port ${APP_PORT} ..."
-              
-            }
+                script {
+                    // Stop and remove any old Docker containers related to the current branch
+                    sh "docker rm -f app-${branch} || true"
+
+                    echo "Deploying the application on port ${APP_PORT}..."
+
+                     // Run the Docker container with the 'app-{branch}' name
+                    sh "docker run -d --name app-${branch} -p ${APP_PORT}:${APP_PORT} ${dockerImage.id}"
         }
     }
 }
