@@ -38,7 +38,7 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 script {
-                    // Initialize variables for naming docker images
+                    // Initial variables for  docker images
                     def node = 'node' 
                     def branch = env.BRANCH_NAME 
                     def version = 'v1.0'
@@ -69,8 +69,8 @@ pipeline {
 
                      // Run the Docker container with the 'app-{branch}' name
                     sh "docker run -d --name app-${branch} -p ${APP_PORT}:${APP_PORT} ${dockerImage.id}"
+                }
+            }
         }
     }
-}
-
-//testing CICD
+}  
