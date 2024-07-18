@@ -7,11 +7,12 @@ pipeline {
                 echo 'Checking out the code...'
             }
         }
-
+    
         stage('Build') {
             steps {
                 echo 'Building the project...'
                 nodejs(nodeJSInstallationName: 'node') {
+                    sh "chmod +x -R ${env.WORKSPACE}"
                     sh './scripts/build.sh'
                     sh 'npm run build'
                 }
@@ -22,11 +23,12 @@ pipeline {
             steps {
                 echo 'Testing the project...'
                 nodejs(nodeJSInstallationName: 'node') {
+                    sh "chmod +x -R ${env.WORKSPACE}"
                     sh './scripts/test.sh'
                 }
             }  
         }
-      
+
         stage('Build and Push Docker Image') {
             steps {
                 script {
@@ -34,6 +36,8 @@ pipeline {
                     def branch = env.BRANCH_NAME 
                     def version = 'v1.0'
                     def appPort
+                    def buildNumber = env.BUILD_NUMBER
+                    def tagName = "${node}-${buildNumber}"
 
                     if (branch == 'main') {
                         appPort = '3000'
@@ -41,22 +45,34 @@ pipeline {
                         appPort = '3001'
                     }
 
-                    dockerImage = docker.build("${node}:${branch}_${version}", "--build-arg APP_PORT=${appPort} .")
+                    dockerImage = docker.build(tagName, "--build-arg APP_PORT=${appPort} .")
                     echo "Docker image ID: ${dockerImage.id}"
-                    
+                                                    
                     docker.withRegistry('https://registry.hub.docker.com', 'docker-hub-credentials') {
-                        dockerImage.push("${branch}")
+                        dockerImage.push()
                     }
                 }
-           }
+            }
         }
 
         stage('Deploy') {
             steps {
                 script {
+                    def buildNumber = env.BUILD_NUMBER
+                    def node = 'node' 
+                    def tagName = "${node}-${buildNumber}"
+                    def branch = env.BRANCH_NAME
+                    def appPort
+                    
+                    if (branch == 'main') {
+                        appPort = '3000'
+                    } else if (branch == 'dev') {
+                        appPort = '3001'
+                    }
+
                     sh "docker rm -f app-${branch} || true"
                     echo "Deploying the application on port ${appPort}..."
-                    sh "docker run -d --name app-${branch} -p ${appPort}:${appPort} ${dockerImage.id}"
+                    sh "docker run -d --name app-${branch} -p ${appPort}:${appPort} ${tagName}"
                 }
             }
         }
