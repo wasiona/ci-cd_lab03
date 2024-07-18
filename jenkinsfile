@@ -29,7 +29,7 @@ pipeline {
             }  
         }
 
-        stage('Build and Push Docker Image') {
+ stage('Build and Push Docker Image') {
             steps {
                 script {
                     def node = 'node' 
@@ -48,7 +48,6 @@ pipeline {
                     dockerImage = docker.build(tagName, "--build-arg APP_PORT=${appPort} .")
                     echo "Docker image ID: ${dockerImage.id}"
 
-                    // added your dockerhub username in the pushed image label 
                     docker.withRegistry('https://registry.hub.docker.com', 'docker-hub-credentials') {
                         dockerImage.push("${tagName}")
                     }
@@ -56,12 +55,11 @@ pipeline {
             }
         }
 
-        stage('Deploy') {
+stage('Deploy') {
             steps {
                 script {
                     def node = 'node' 
                     def buildNumber = env.BUILD_NUMBER
-                    def tagName = "teodoravucicevicepam/${node}-${buildNumber}"
                     def branch = env.BRANCH_NAME
                     def appPort
 
@@ -73,7 +71,7 @@ pipeline {
 
                     sh "docker rm -f app-${branch} || true"
                     echo "Deploying the application on port ${appPort}..."
-                    sh "docker run -d --name app-${branch} -p ${appPort}:${appPort} ${tagName}"
+                    sh "docker run -d --name app-${branch} -p ${appPort}:${appPort} teodoravucicevicepam/node:${buildNumber}"
                 }
             }
         }
