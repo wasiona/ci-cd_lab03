@@ -28,31 +28,30 @@ pipeline {
             }  
         }
 
-stage('Build and Push Docker Image') {
-   steps {
-       script {
-           def node = 'node' 
-           def branch = env.BRANCH_NAME 
-           def version = 'v1.0'
-           def appPort
-           def tagPart = (branch == 'main') ? "main" : "dev"
-           def tagName ="${node}${tagPart}:${version}"
+        stage('Build and Push Docker Image') {
+            steps {
+                script {
+                    def node = 'node' 
+                    def branch = env.BRANCH_NAME 
+                    def version = 'v1.0'
+                    def appPort
+                    def tagPart = (branch == 'main') ? "main" : "dev"
+                    def tagName ="${node}${tagPart}:${version}"
 
-           if (branch == 'main') {
-               appPort = '3000'
-           } else if (branch == 'dev') {
-               appPort = '3001'
-           }
+                    if (branch == 'main') {
+                        appPort = '3000'
+                    } else if (branch == 'dev') {
+                        appPort = '3001'
+                    }
 
-           dockerImage = docker.build(tagName, "--build-arg APP_PORT=${appPort} .")
-           echo "Docker image ID: ${dockerImage.id}"
+                    dockerImage = docker.build("${env.DOCKER_USERNAME}/${node}${tagPart}", "--build-arg APP_PORT=${appPort} .")
 
-           docker.withRegistry('https://index.docker.io/v1/', 'docker-hub-credentials') {
-               dockerImage.push()
-           }
-       }
-   }
-}
+                    docker.withRegistry('https://index.docker.io/v1/', 'docker-hub-credentials') {
+                       dockerImage.push("${version}")
+                    }
+                }
+            }
+        }
 
         stage('Deploy') {
             steps {
@@ -81,5 +80,5 @@ stage('Build and Push Docker Image') {
                 }
             }
         }
-    }
-}
+    } 
+} 
