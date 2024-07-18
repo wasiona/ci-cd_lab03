@@ -29,61 +29,56 @@ pipeline {
             }  
         }
 
-        stage('Build and Push Docker Image') {
-            steps {
-                script {
-                    def node = 'node' 
-                    def branch = env.BRANCH_NAME 
-                    def version = 'v1.0'
-                    def appPort
-                    def buildNumber = env.BUILD_NUMBER
-                    def tagName = "teodoravucicevicepam/${node}-${buildNumber}"
+stage('Build and Push Docker Image') {
+    steps {
+        script {
+            def node = 'node' 
+            def branch = env.BRANCH_NAME 
+            def version = 'v1.0'
+            def appPort
+            def tagPart = (branch == 'main') ? 'main' : 'dev'
+            def tagName ="${node}${tagPart}:${version}"
 
-                    if (branch == 'main') {
-                        appPort = '3000'
-                        tagName = "nodemain:${version}"
-                    } else if (branch == 'dev') {
-                        appPort = '3001'
-                        tagName = "nodedev:${version}"
-                    }
+            if (branch == 'main') {
+                appPort = '3000'
+            } else if (branch == 'dev') {
+                appPort = '3001'
+            }
 
-                    dockerImage = docker.build(tagName, "--build-arg APP_PORT=${appPort} .")
-                    echo "Docker image ID: ${dockerImage.id}"
+            dockerImage = docker.build(tagName, "--build-arg APP_PORT=${appPort} .")
+            echo "Docker image ID: ${dockerImage.id}"
 
-                    docker.withRegistry('https://registry.hub.docker.com', 'docker-hub-credentials') {
-                        dockerImage.push("${version}")
-                        if (branch == 'main') {
-                            dockerImage.push("latest")
-                        }
-                    }
-                }
+            docker.withRegistry('https://registry.hub.docker.com', 'docker-hub-credentials') {
+                dockerImage.push()
             }
         }
+    }
+}
 
-        stage('Deploy') {
-            steps {
-                script {
-                    def node = 'node' 
-                    def buildNumber = env.BUILD_NUMBER
-                    def branch = env.BRANCH_NAME 
-                    def appPort
-                    def projectName
-                    def containerName
+stage('Deploy') {
+    steps {
+        script {
+            def node = 'node' 
+            def branch = env.BRANCH_NAME 
+            def version = 'v1.0'
+            def appPort
+            def projectName
+            def containerName
+            def tagPart = (branch == 'main') ? 'main' : 'dev'
+            def imageName ="${node}${tagPart}:${version}"
 
-                    if (branch == 'main') {
-                        appPort = '3000'
-                        projectName = 'nodemain'
-                        containerName = 'app-main'
-                    } else if (branch == 'dev') {
-                        appPort = '3001'
-                        projectName = 'nodedev'
-                        containerName = 'app-dev'
-                    }
-
-                    sh "docker rm -f ${containerName} || true"
-                    sh "docker run -d --name ${containerName} -p ${appPort}:${appPort} teodoravucicevicepam/${projectName}:${version}"
-                }
+            if (branch == 'main') {
+                appPort = '3000'
+                projectName = 'nodemain'
+                containerName = 'app-main'
+            } else if (branch == 'dev') {
+                appPort = '3001'
+                projectName = 'nodedev'
+                containerName = 'app-dev'
             }
+
+            sh "docker rm -f ${containerName} || true"
+            sh "docker run -d --name ${containerName} -p ${appPort}:${appPort} ${imageName}"
         }
     }
 }
