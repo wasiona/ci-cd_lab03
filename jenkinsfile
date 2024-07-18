@@ -50,7 +50,7 @@ pipeline {
 
                     // added your dockerhub username in the pushed image label 
                     docker.withRegistry('https://registry.hub.docker.com', 'docker-hub-credentials') {
-                        dockerImage.push("${DOCKER_USER}/${tagName}")
+                        dockerImage.push("$teodoravucicevicepam/${tagName}")
                     }
                 }
             }
