@@ -41,7 +41,7 @@ pipeline {
                         appPort = '3001'
                     }
 
-                    dockerImage = docker.build("${node}${branch}:${version} --build-arg APP_PORT=${appPort} .")
+                    dockerImage = docker.build("${node}:${branch}_${version}", "--build-arg APP_PORT=${appPort} .")
                     echo "Docker image ID: ${dockerImage.id}"
                     
                     docker.withRegistry('https://registry.hub.docker.com', 'docker-hub-credentials') {
