@@ -43,7 +43,7 @@ pipeline {
                 appPort = '3001'
             }
 
-            dockerImage = docker.build("${env.DOCKER_USERNAME}/${tagName}", "--build-arg APP_PORT=${appPort} .")
+            dockerImage = docker.build("${teodoravucicevicepam}/${tagName}", "--build-arg APP_PORT=${appPort} .")
             echo "Docker image ID: ${dockerImage.id}"
 
             docker.withRegistry('https://registry.hub.docker.com', 'docker-hub-credentials') {
