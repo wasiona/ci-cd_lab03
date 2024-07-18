@@ -1,6 +1,5 @@
 pipeline {
     agent any
-
     stages {
         stage('Checkout') {
             steps {
@@ -29,56 +28,58 @@ pipeline {
             }  
         }
 
-stage('Build and Push Docker Image') {
-    steps {
-        script {
-            def node = 'node' 
-            def branch = env.BRANCH_NAME 
-            def version = 'v1.0'
-            def appPort
-            def tagPart = (branch == 'main') ? 'main' : 'dev'
-            def tagName ="${node}${tagPart}:${version}"
+        stage('Build and Push Docker Image') {
+            steps {
+                script {
+                    def node = 'node' 
+                    def branch = env.BRANCH_NAME 
+                    def version = 'v1.0'
+                    def appPort
+                    def tagPart = (branch == 'main') ? "main" : "dev"
+                    def tagName ="${node}${tagPart}:${version}"
 
-            if (branch == 'main') {
-                appPort = '3000'
-            } else if (branch == 'dev') {
-                appPort = '3001'
-            }
+                    if (branch == 'main') {
+                        appPort = '3000'
+                    } else if (branch == 'dev') {
+                        appPort = '3001'
+                    }
 
-            dockerImage = docker.build(tagName, "--build-arg APP_PORT=${appPort} .")
-            echo "Docker image ID: ${dockerImage.id}"
+                    dockerImage = docker.build(tagName, "--build-arg APP_PORT=${appPort} .")
+                    echo "Docker image ID: ${dockerImage.id}"
 
-            docker.withRegistry('https://registry.hub.docker.com', 'docker-hub-credentials') {
-                dockerImage.push()
+                    docker.withRegistry('https://registry.hub.docker.com', 'docker-hub-credentials') {
+                        dockerImage.push()
+                    }
+                }
             }
         }
-    }
-}
 
-stage('Deploy') {
-    steps {
-        script {
-            def node = 'node' 
-            def branch = env.BRANCH_NAME 
-            def version = 'v1.0'
-            def appPort
-            def projectName
-            def containerName
-            def tagPart = (branch == 'main') ? 'main' : 'dev'
-            def imageName ="${node}${tagPart}:${version}"
+        stage('Deploy') {
+            steps {
+                script {
+                    def node = 'node' 
+                    def branch = env.BRANCH_NAME 
+                    def version = 'v1.0'
+                    def appPort
+                    def projectName
+                    def containerName
+                    def tagPart = (branch == 'main') ? 'main' : 'dev'
+                    def imageName ="${node}${tagPart}:${version}"
 
-            if (branch == 'main') {
-                appPort = '3000'
-                projectName = 'nodemain'
-                containerName = 'app-main'
-            } else if (branch == 'dev') {
-                appPort = '3001'
-                projectName = 'nodedev'
-                containerName = 'app-dev'
+                    if (branch == 'main') {
+                        appPort = '3000'
+                        projectName = 'nodemain'
+                        containerName = 'app-main'
+                    } else if (branch == 'dev') {
+                        appPort = '3001'
+                        projectName = 'nodedev'
+                        containerName = 'app-dev'
+                    }
+
+                    sh "docker rm -f ${containerName} || true"
+                    sh "docker run -d --name ${containerName} -p ${appPort}:${appPort} ${imageName}"
+                }
             }
-
-            sh "docker rm -f ${containerName} || true"
-            sh "docker run -d --name ${containerName} -p ${appPort}:${appPort} ${imageName}"
         }
     }
 }
