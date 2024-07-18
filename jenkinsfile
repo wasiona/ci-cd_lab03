@@ -7,7 +7,7 @@ pipeline {
                 echo 'Checking out the code...'
             }
         }
-    
+
         stage('Build') {
             steps {
                 echo 'Building the project...'
@@ -47,9 +47,10 @@ pipeline {
 
                     dockerImage = docker.build(tagName, "--build-arg APP_PORT=${appPort} .")
                     echo "Docker image ID: ${dockerImage.id}"
-                                                    
+
+                    // added your dockerhub username in the pushed image label 
                     docker.withRegistry('https://registry.hub.docker.com', 'docker-hub-credentials') {
-                        dockerImage.push()
+                        dockerImage.push("${DOCKER_USER}/${tagName}")
                     }
                 }
             }
@@ -60,10 +61,10 @@ pipeline {
                 script {
                     def buildNumber = env.BUILD_NUMBER
                     def node = 'node' 
-                    def tagName = "${node}-${buildNumber}"
+                    def tagName = "${DOCKER_USER}/${node}-${buildNumber}"
                     def branch = env.BRANCH_NAME
                     def appPort
-                    
+
                     if (branch == 'main') {
                         appPort = '3000'
                     } else if (branch == 'dev') {
