@@ -41,19 +41,20 @@ pipeline {
 
                     if (branch == 'main') {
                         appPort = '3000'
+                        tagName = "nodemain:${version}"
                     } else if (branch == 'dev') {
                         appPort = '3001'
+                        tagName = "nodedev:${version}"
                     }
 
                     dockerImage = docker.build(tagName, "--build-arg APP_PORT=${appPort} .")
                     echo "Docker image ID: ${dockerImage.id}"
 
                     docker.withRegistry('https://registry.hub.docker.com', 'docker-hub-credentials') {
-                        dockerImage.push("${buildNumber}")
-                        dockerImage.push("latest")
-                        
-                        echo "Branch Name: ${env.BRANCH_NAME}"
-                        echo "App Port: ${appPort}"
+                        dockerImage.push("${version}")
+                        if (branch == 'main') {
+                            dockerImage.push("latest")
+                        }
                     }
                 }
             }
@@ -64,20 +65,23 @@ pipeline {
                 script {
                     def node = 'node' 
                     def buildNumber = env.BUILD_NUMBER
-                    def branch = env.BRANCH_NAME
+                    def branch = env.BRANCH_NAME 
                     def appPort
+                    def projectName
+                    def containerName
 
                     if (branch == 'main') {
                         appPort = '3000'
+                        projectName = 'nodemain'
+                        containerName = 'app-main'
                     } else if (branch == 'dev') {
                         appPort = '3001'
+                        projectName = 'nodedev'
+                        containerName = 'app-dev'
                     }
 
-                    sh "docker rm -f app-${branch} || true"
-                    echo "Deploying the application on port ${appPort}..."
-                    sh "docker run -d --name app-${branch} -p ${appPort}:${appPort} teodoravucicevicepam/${node}-${buildNumber}:latest"
-                    echo "Branch Name: ${env.BRANCH_NAME}"
-                    echo "App Port: ${appPort}"
+                    sh "docker rm -f ${containerName} || true"
+                    sh "docker run -d --name ${containerName} -p ${appPort}:${appPort} teodoravucicevicepam/${projectName}:${version}"
                 }
             }
         }
