@@ -1,10 +1,6 @@
 pipeline {
     agent any
 
-    environment {
-        APP_PORT = BRANCH_NAME == 'main' ? '3000' : '3001'
-    }
-
     stages {
         stage('Checkout') {
             steps {
@@ -31,7 +27,7 @@ pipeline {
             }  
         }
       
-        stage('Build Docker Image') {
+        stage('Build and Push Docker Image') {
             steps {
                 script {
                     def node = 'node' 
@@ -39,34 +35,28 @@ pipeline {
                     def version = 'v1.0'
                     def appPort
 
-                    if(branch == 'main') {
+                    if (branch == 'main') {
                         appPort = '3000'
-                    } else if(branch == 'dev') {
+                    } else if (branch == 'dev') {
                         appPort = '3001'
                     }
 
                     dockerImage = docker.build("${node}${branch}:${version} --build-arg APP_PORT=${appPort} .")
                     echo "Docker image ID: ${dockerImage.id}"
-                }
-            }
-        }
-
-        stage('Push Docker Image') {
-            steps {
-                script {
+                    
                     docker.withRegistry('https://registry.hub.docker.com', 'docker-hub-credentials') {
                         dockerImage.push("${branch}")
                     }
                 }
-            }
+           }
         }
 
         stage('Deploy') {
             steps {
                 script {
                     sh "docker rm -f app-${branch} || true"
-                    echo "Deploying the application on port ${APP_PORT}..."
-                    sh "docker run -d --name app-${branch} -p ${APP_PORT}:${APP_PORT} ${dockerImage.id}"
+                    echo "Deploying the application on port ${appPort}..."
+                    sh "docker run -d --name app-${branch} -p ${appPort}:${appPort} ${dockerImage.id}"
                 }
             }
         }
