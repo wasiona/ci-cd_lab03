@@ -51,6 +51,9 @@ pipeline {
                     docker.withRegistry('https://registry.hub.docker.com', 'docker-hub-credentials') {
                         dockerImage.push("${buildNumber}")
                         dockerImage.push("latest")
+                        
+                        echo "Branch Name: ${env.BRANCH_NAME}"
+                        echo "App Port: ${appPort}"
                     }
                 }
             }
@@ -73,6 +76,8 @@ pipeline {
                     sh "docker rm -f app-${branch} || true"
                     echo "Deploying the application on port ${appPort}..."
                     sh "docker run -d --name app-${branch} -p ${appPort}:${appPort} teodoravucicevicepam/${node}-${buildNumber}:latest"
+                    echo "Branch Name: ${env.BRANCH_NAME}"
+                    echo "App Port: ${appPort}"
                 }
             }
         }
