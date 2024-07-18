@@ -29,7 +29,7 @@ pipeline {
             }  
         }
 
- stage('Build and Push Docker Image') {
+        stage('Build and Push Docker Image') {
             steps {
                 script {
                     def node = 'node' 
@@ -49,13 +49,14 @@ pipeline {
                     echo "Docker image ID: ${dockerImage.id}"
 
                     docker.withRegistry('https://registry.hub.docker.com', 'docker-hub-credentials') {
-                        dockerImage.push()
+                        dockerImage.push("${buildNumber}")
+                        dockerImage.push("latest")
                     }
                 }
             }
         }
 
-stage('Deploy') {
+        stage('Deploy') {
             steps {
                 script {
                     def node = 'node' 
@@ -71,7 +72,7 @@ stage('Deploy') {
 
                     sh "docker rm -f app-${branch} || true"
                     echo "Deploying the application on port ${appPort}..."
-                    sh "docker run -d --name app-${branch} -p ${appPort}:${appPort} teodoravucicevicepam/node:${buildNumber}"
+                    sh "docker run -d --name app-${branch} -p ${appPort}:${appPort} teodoravucicevicepam/${node}-${buildNumber}:latest"
                 }
             }
         }
