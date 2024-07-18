@@ -7,7 +7,7 @@ pipeline {
                 echo 'Checking out the code...'
             }
         }
-    
+
         stage('Build') {
             steps {
                 echo 'Building the project...'
@@ -37,7 +37,7 @@ pipeline {
                     def version = 'v1.0'
                     def appPort
                     def buildNumber = env.BUILD_NUMBER
-                    def tagName = "${node}-${buildNumber}"
+                    def tagName = "teodoravucicevicepam/${node}-${buildNumber}"
 
                     if (branch == 'main') {
                         appPort = '3000'
@@ -47,9 +47,10 @@ pipeline {
 
                     dockerImage = docker.build(tagName, "--build-arg APP_PORT=${appPort} .")
                     echo "Docker image ID: ${dockerImage.id}"
-                                                    
+
                     docker.withRegistry('https://registry.hub.docker.com', 'docker-hub-credentials') {
-                        dockerImage.push()
+                        dockerImage.push("${buildNumber}")
+                        dockerImage.push("latest")
                     }
                 }
             }
@@ -58,12 +59,11 @@ pipeline {
         stage('Deploy') {
             steps {
                 script {
-                    def buildNumber = env.BUILD_NUMBER
                     def node = 'node' 
-                    def tagName = "${node}-${buildNumber}"
+                    def buildNumber = env.BUILD_NUMBER
                     def branch = env.BRANCH_NAME
                     def appPort
-                    
+
                     if (branch == 'main') {
                         appPort = '3000'
                     } else if (branch == 'dev') {
@@ -72,7 +72,7 @@ pipeline {
 
                     sh "docker rm -f app-${branch} || true"
                     echo "Deploying the application on port ${appPort}..."
-                    sh "docker run -d --name app-${branch} -p ${appPort}:${appPort} ${tagName}"
+                    sh "docker run -d --name app-${branch} -p ${appPort}:${appPort} teodoravucicevicepam/${node}-${buildNumber}:latest"
                 }
             }
         }
