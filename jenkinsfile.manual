@@ -1,0 +1,24 @@
+pipeline {
+    agent any
+    environment {
+        node = 'node'
+        branch = 'main'
+        version = 'v1.0'
+        appPort = '3000'
+    }
+    stages {
+        stage('Deploy') {
+            when {
+                branch 'main'
+            }
+            steps {
+                script {
+                    echo "Deploying the application on port ${appPort}..."
+                    sh "docker rm -f app-${branch} || true"
+                    sh "docker pull teodoravucicevicepam/${node}${branch}:${version}"
+                    sh "docker run -d --name app-${branch} -p ${appPort}:${appPort} teodoravucicevicepam/${node}${branch}:${version}"
+                }
+            }
+        }
+    }
+}
