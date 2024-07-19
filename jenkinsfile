@@ -50,8 +50,9 @@ pipeline {
                     echo "Docker image ID: ${dockerImage.id}"
 
                     docker.withRegistry('https://registry.hub.docker.com', 'docker-hub-credentials') {
-                        dockerImage.push("${buildNumber}")
-                        dockerImage.push("latest")
+                        // dockerImage.push("${buildNumber}")
+                        dockerImage.push()
+                        // dockerImage.push("latest")
                     }
                 }
             }
