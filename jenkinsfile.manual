@@ -8,9 +8,6 @@ pipeline {
     }
     stages {
         stage('Deploy') {
-                 {
-                branch 'main'
-            }
             steps {
                 script {
                     echo "Deploying the application on port ${appPort}..."
