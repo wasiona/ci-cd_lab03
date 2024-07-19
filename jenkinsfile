@@ -65,6 +65,7 @@ pipeline {
                     def buildNumber = env.BUILD_NUMBER
                     def branch = env.BRANCH_NAME
                     def appPort
+                    def version = 'v1.0'
 
                     if (branch == 'main') {
                         appPort = '3000'
