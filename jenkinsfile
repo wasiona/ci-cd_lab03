@@ -35,10 +35,11 @@ pipeline {
                     def node = 'node' 
                     def branch = env.BRANCH_NAME 
                     def version = 'v1.0'
-                    def appPort
+                    
                     def buildNumber = env.BUILD_NUMBER
-                    def tagName = "teodoravucicevicepam/${node}-${buildNumber}"
+                    def tagName = "teodoravucicevicepam/${node}${branch}:${version}"
 
+                    def appPort
                     if (branch == 'main') {
                         appPort = '3000'
                     } else if (branch == 'dev') {
